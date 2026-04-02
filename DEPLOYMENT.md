@@ -51,3 +51,4 @@ https://gamee.vercel.app,https://gamee-git-main-<team>.vercel.app
 
 - Keep server/.env and client/.env.local out of Git (already ignored).
 - If first backend request is slow on free plan, wait a few seconds and retry.
+- Last updated by: dadhalekanchan-stack
