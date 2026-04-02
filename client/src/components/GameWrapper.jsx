@@ -13,6 +13,7 @@ export default function GameWrapper({ onClose }) {
   const [currentZone, setCurrentZone] = useState('Physics Town')
   const [isPaused, setIsPaused] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showHud, setShowHud] = useState(false)
 
   useEffect(() => {
     if (gameRef.current) return
@@ -95,6 +96,10 @@ export default function GameWrapper({ onClose }) {
         if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
         else shellRef.current?.requestFullscreen?.().catch(() => {})
       }
+      if (e.key.toLowerCase() === 'h') {
+        e.preventDefault()
+        setShowHud((prev) => !prev)
+      }
     }
     document.addEventListener('fullscreenchange', onFsChange)
     window.addEventListener('keydown', onKeyDown)
@@ -104,6 +109,10 @@ export default function GameWrapper({ onClose }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (isPaused) setShowHud(true)
+  }, [isPaused])
+
   const toggleFullscreen = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
     else shellRef.current?.requestFullscreen?.().catch(() => {})
@@ -112,7 +121,13 @@ export default function GameWrapper({ onClose }) {
   return (
     <div ref={shellRef} className="relative w-screen h-screen overflow-hidden bg-black">
       <div id="phaser-container" className="w-screen h-screen" />
-      <HUD zone={currentZone} paused={isPaused} />
+      {showHud ? <HUD zone={currentZone} paused={isPaused} /> : null}
+      <button
+        className="absolute top-3 left-3 z-20 px-3 py-2 text-[10px] text-white bg-black/70 border border-cyan-300"
+        onClick={() => setShowHud((prev) => !prev)}
+      >
+        {showHud ? 'Hide HUD (H)' : 'Show HUD (H)'}
+      </button>
       <button className="absolute top-3 right-3 z-20 px-3 py-2 text-[10px] text-white bg-black/70 border border-blue-400" onClick={toggleFullscreen}>
         {isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'}
       </button>

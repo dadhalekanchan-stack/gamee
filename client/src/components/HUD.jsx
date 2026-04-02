@@ -11,23 +11,23 @@ export default function HUD({ zone, paused }) {
 
   return (
     <div
-      className="absolute top-3 left-3 z-10 p-4 text-[14px] leading-6 text-white"
-      style={{ background: 'rgba(7,10,18,0.94)', border: '3px solid #8ec5ff', width: 420, boxShadow: '0 0 0 3px #1f2e4a inset', fontFamily: 'Arial, sans-serif' }}
+      className="absolute top-14 left-3 z-10 p-3 text-[12px] leading-5 text-white rounded"
+      style={{ background: 'rgba(7,10,18,0.78)', border: '2px solid #8ec5ff', width: 300, boxShadow: '0 0 0 2px #1f2e4a inset', fontFamily: 'Arial, sans-serif' }}
     >
-      <div className="mb-2 text-[14px] text-blue-100">ACADEMIA HUD</div>
+      <div className="mb-1 text-[12px] text-blue-100">ACADEMIA HUD</div>
       <div>❤ HP</div>
-      <div className="w-full h-4 bg-gray-700 mb-1">
-        <div className="h-4 bg-red-500" style={{ width: `${hpPct}%` }} />
+      <div className="w-full h-3 bg-gray-700 mb-1">
+        <div className="h-3 bg-red-500" style={{ width: `${hpPct}%` }} />
       </div>
       <div className="mb-2">{hp}/{maxHp}</div>
       <div>⭐ EXP</div>
-      <div className="w-full h-4 bg-gray-700 mb-1">
-        <div className="h-4 bg-yellow-400" style={{ width: `${expPct}%` }} />
+      <div className="w-full h-3 bg-gray-700 mb-1">
+        <div className="h-3 bg-yellow-400" style={{ width: `${expPct}%` }} />
       </div>
       <div className="mb-2">{Number.isFinite(threshold) ? `${exp}/${threshold}` : 'MAX LEVEL'}</div>
       <div>LVL {level} | {zone}</div>
-      <div className="mt-2 text-[12px] text-blue-100">Pause: Esc | Key Guide: inside Pause Menu</div>
-      {paused ? <div className="mt-1 text-[13px] text-yellow-300">PAUSED</div> : null}
+      <div className="mt-2 text-[10px] text-blue-100">Pause: Esc | Toggle HUD: H</div>
+      {paused ? <div className="mt-1 text-[11px] text-yellow-300">PAUSED</div> : null}
     </div>
   )
 }
