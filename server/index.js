@@ -10,7 +10,22 @@ const db = require('./db/pool')
 const app = express()
 const PORT = process.env.PORT || 5000
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }))
+const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+      return callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true,
+  }),
+)
 app.use(express.json())
 
 if (process.env.NODE_ENV !== 'production') {
@@ -21,6 +36,10 @@ app.use('/api/auth', require('./routes/auth.routes'))
 app.use('/api', require('./routes/encounter.routes'))
 app.use('/api', require('./routes/battle.routes'))
 app.use('/api', require('./routes/player.routes'))
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ ok: true })
+})
 
 app.use((err, req, res, next) => {
   console.error('[Error]', err.stack)
