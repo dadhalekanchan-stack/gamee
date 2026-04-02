@@ -236,17 +236,16 @@ export class WorldScene extends Phaser.Scene {
     if (this.pauseContainer) return
     const { width, height } = this.scale
     const container = this.add.container(0, 0).setDepth(50)
-    const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.55)
-    const panel = this.add.rectangle(width / 2, height / 2, 520, 340, 0x101a2a, 0.95).setStrokeStyle(3, 0x7bb2ff)
+    const panel = this.add.rectangle(width - 220, 140, 380, 235, 0x101a2a, 0.92).setStrokeStyle(3, 0x7bb2ff)
     const title = this.add
-      .text(width / 2, height / 2 - 145, 'PAUSE MENU', {
+      .text(width - 220, 44, 'PAUSE MENU', {
         fontFamily: '"Press Start 2P"',
         fontSize: '14px',
         color: '#d9ebff',
       })
       .setOrigin(0.5)
     const keysTitle = this.add
-      .text(width / 2, height / 2 - 105, 'KEY GUIDE', {
+      .text(width - 220, 78, 'KEY GUIDE', {
         fontFamily: '"Press Start 2P"',
         fontSize: '10px',
         color: '#ffe58a',
@@ -259,10 +258,11 @@ export class WorldScene extends Phaser.Scene {
       'Battle Selection: Arrow Keys',
       'Pause Menu: ESC',
       'Fullscreen Toggle: F',
+      'HUD Toggle: H',
       'Resume Game: ESC',
     ]
     const keyText = this.add
-      .text(width / 2, height / 2 - 20, lines.join('\n'), {
+      .text(width - 220, 148, lines.join('\n'), {
         fontFamily: '"Press Start 2P"',
         fontSize: '9px',
         color: '#ffffff',
@@ -271,13 +271,13 @@ export class WorldScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
     const footer = this.add
-      .text(width / 2, height / 2 + 125, 'Read-only mapping for Pass 1', {
+      .text(width - 220, 236, 'Press ESC to continue', {
         fontFamily: '"Press Start 2P"',
         fontSize: '8px',
         color: '#8bb6e0',
       })
       .setOrigin(0.5)
-    container.add([backdrop, panel, title, keysTitle, keyText, footer])
+    container.add([panel, title, keysTitle, keyText, footer])
     this.pauseContainer = container
   }
 
