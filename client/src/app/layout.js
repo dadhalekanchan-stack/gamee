@@ -8,12 +8,15 @@ export const metadata = {
   title: 'Academia 2D RPG',
   description: 'Tile-based educational RPG',
   manifest: '/manifest.webmanifest',
-  themeColor: '#10244f',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Academia',
   },
+}
+
+export const viewport = {
+  themeColor: '#10244f',
 }
 
 export default function RootLayout({ children }) {
