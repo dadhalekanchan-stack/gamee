@@ -1,6 +1,6 @@
 const CACHE_NAME = 'academia-cache-v1'
 const OFFLINE_URL = '/offline.html'
-const STATIC_ASSETS = ['/', OFFLINE_URL, '/manifest.webmanifest', '/icons/pwa-192.svg', '/icons/pwa-512.svg']
+const STATIC_ASSETS = ['/', OFFLINE_URL, '/manifest.webmanifest', '/icons/pwa-192.png', '/icons/pwa-512.png']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
