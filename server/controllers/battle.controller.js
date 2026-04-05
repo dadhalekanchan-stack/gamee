@@ -51,7 +51,8 @@ async function evaluateBattle(req, res, next) {
       new_level: player.level,
       new_exp: player.exp,
       badge_earned: null,
-      explanation: null,
+      explanation: question.explanation,
+      correct_idx: Number(question.correct_idx),
     }
 
     if (isCorrect) {
@@ -83,7 +84,6 @@ async function evaluateBattle(req, res, next) {
       response.new_level = newLevel
       response.new_exp = newExp
       response.badge_earned = badgeName
-      response.explanation = question.explanation
     }
 
     return res.status(200).json(response)

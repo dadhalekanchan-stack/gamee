@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Providers from '../providers'
 import { usePlayer } from '../../hooks/usePlayer'
+import BackButton from '../../components/BackButton'
+import { isOnboardingDone } from '../../lib/onboarding'
 
 const STANDARD_REGIONS = [
   { standard: 'Std 6', region: 'Region A' },
@@ -21,6 +23,10 @@ function SelectRegionBody() {
 
   useEffect(() => {
     if (!isLoaded) return
+    if (!isOnboardingDone()) {
+      router.replace('/tutorial')
+      return
+    }
     if (!token) router.replace('/login')
     else if (selectedStandard) router.replace('/dashboard')
   }, [token, isLoaded, selectedStandard, router])
@@ -40,6 +46,9 @@ function SelectRegionBody() {
 
   return (
     <div className="min-h-screen p-6">
+      <div className="mb-4">
+        <BackButton fallback="/login" label="Login" />
+      </div>
       <h1 className="academy-title text-lg mb-4">Select Your Standard Region (Required)</h1>
       <p className="text-xs text-slate-200 mb-6">Only PCM is active for now. Other streams are visible as coming soon.</p>
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
