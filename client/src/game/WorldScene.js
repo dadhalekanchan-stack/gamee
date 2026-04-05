@@ -22,6 +22,8 @@ export class WorldScene extends Phaser.Scene {
     this.zoneBroadcastAt = 0
     this.isPaused = false
     this.pauseContainer = null
+    this.pauseButtons = []
+    this.pauseSelection = 0
   }
 
   create() {
@@ -236,22 +238,24 @@ export class WorldScene extends Phaser.Scene {
     if (this.pauseContainer) return
     const { width, height } = this.scale
     const container = this.add.container(0, 0).setDepth(50)
-    const panel = this.add.rectangle(width - 220, 140, 380, 235, 0x101a2a, 0.92).setStrokeStyle(3, 0x7bb2ff)
+    const panel = this.add.rectangle(width - 220, height / 2, 420, 330, 0x101a2a, 0.95).setStrokeStyle(3, 0x7bb2ff)
     const title = this.add
-      .text(width - 220, 44, 'PAUSE MENU', {
+      .text(width - 220, height / 2 - 126, 'PAUSE MENU', {
         fontFamily: '"Press Start 2P"',
         fontSize: '14px',
         color: '#d9ebff',
       })
       .setOrigin(0.5)
-    const keysTitle = this.add
-      .text(width - 220, 78, 'KEY GUIDE', {
+
+    const subTitle = this.add
+      .text(width - 220, height / 2 - 98, 'Choose an option', {
         fontFamily: '"Press Start 2P"',
-        fontSize: '10px',
+        fontSize: '9px',
         color: '#ffe58a',
       })
       .setOrigin(0.5)
-    const lines = [
+
+    const keyLines = [
       'Move: Arrow Keys or W A S D',
       'Enter Gym: E (when standing on gym)',
       'Confirm in Battle: ENTER',
@@ -261,27 +265,106 @@ export class WorldScene extends Phaser.Scene {
       'HUD Toggle: H',
       'Resume Game: ESC',
     ]
-    const keyText = this.add
-      .text(width - 220, 148, lines.join('\n'), {
+
+    const detailText = this.add
+      .text(width - 220, height / 2 + 88, keyLines.join('\n'), {
         fontFamily: '"Press Start 2P"',
         fontSize: '9px',
         color: '#ffffff',
         align: 'center',
-        lineSpacing: 6,
+        lineSpacing: 4,
       })
       .setOrigin(0.5)
+
+    const actions = [
+      {
+        label: 'Key Bindings',
+        onSelect: () => {
+          detailText.setText(keyLines.join('\n'))
+        },
+      },
+      {
+        label: 'Help / Tutorial',
+        onSelect: () => {
+          this.isPaused = false
+          this.closePauseMenu()
+          window.dispatchEvent(new CustomEvent('academia:pauseToggle', { detail: { paused: false } }))
+          window.dispatchEvent(new CustomEvent('academia:pauseAction', { detail: { action: 'tutorial' } }))
+        },
+      },
+      {
+        label: 'Select Class Again',
+        onSelect: () => {
+          this.isPaused = false
+          this.closePauseMenu()
+          window.dispatchEvent(new CustomEvent('academia:pauseToggle', { detail: { paused: false } }))
+          window.dispatchEvent(new CustomEvent('academia:pauseAction', { detail: { action: 'selectClass' } }))
+        },
+      },
+    ]
+
+    this.pauseButtons = actions.map((action, idx) => {
+      const y = height / 2 - 52 + idx * 42
+      const bg = this.add
+        .rectangle(width - 220, y, 270, 34, 0x173456, 0.92)
+        .setStrokeStyle(2, 0x7bb2ff)
+        .setInteractive({ cursor: 'pointer' })
+      const label = this.add
+        .text(width - 220, y, action.label, {
+          fontFamily: '"Press Start 2P"',
+          fontSize: '9px',
+          color: '#ffffff',
+        })
+        .setOrigin(0.5)
+      bg.on('pointerdown', action.onSelect)
+      bg.on('pointerover', () => this.highlightPauseSelection(idx))
+      return { bg, label, onSelect: action.onSelect }
+    })
+
+    this.pauseSelection = 0
+    this.highlightPauseSelection(0)
+
+    this.onPauseUp = () => this.highlightPauseSelection(Math.max(0, this.pauseSelection - 1))
+    this.onPauseDown = () => this.highlightPauseSelection(Math.min(this.pauseButtons.length - 1, this.pauseSelection + 1))
+    this.onPauseEnter = () => {
+      const item = this.pauseButtons[this.pauseSelection]
+      if (item) item.onSelect()
+    }
+
+    this.input.keyboard.on('keydown-UP', this.onPauseUp)
+    this.input.keyboard.on('keydown-DOWN', this.onPauseDown)
+    this.input.keyboard.on('keydown-ENTER', this.onPauseEnter)
+
     const footer = this.add
-      .text(width - 220, 236, 'Press ESC to continue', {
+      .text(width - 220, height / 2 + 146, 'Press ESC to continue', {
         fontFamily: '"Press Start 2P"',
         fontSize: '8px',
         color: '#8bb6e0',
       })
       .setOrigin(0.5)
-    container.add([panel, title, keysTitle, keyText, footer])
+    container.add([panel, title, subTitle, detailText, footer, ...this.pauseButtons.flatMap((b) => [b.bg, b.label])])
     this.pauseContainer = container
   }
 
+  highlightPauseSelection(idx) {
+    this.pauseSelection = idx
+    this.pauseButtons.forEach((btn, i) => {
+      if (i === idx) {
+        btn.bg.setFillStyle(0x1f4ea6).setStrokeStyle(2, 0x9ed0ff)
+      } else {
+        btn.bg.setFillStyle(0x173456).setStrokeStyle(2, 0x7bb2ff)
+      }
+    })
+  }
+
   closePauseMenu() {
+    if (this.onPauseUp) this.input.keyboard.off('keydown-UP', this.onPauseUp)
+    if (this.onPauseDown) this.input.keyboard.off('keydown-DOWN', this.onPauseDown)
+    if (this.onPauseEnter) this.input.keyboard.off('keydown-ENTER', this.onPauseEnter)
+    this.onPauseUp = null
+    this.onPauseDown = null
+    this.onPauseEnter = null
+    this.pauseButtons = []
     if (this.pauseContainer) {
       this.pauseContainer.destroy(true)
       this.pauseContainer = null

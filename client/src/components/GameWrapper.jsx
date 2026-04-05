@@ -24,6 +24,7 @@ export default function GameWrapper({ onClose }) {
     let onSyncPos
     let onZoneChange
     let onPauseToggle
+    let onPauseAction
 
     ;(async () => {
       const Phaser = (await import('phaser')).default
@@ -63,12 +64,23 @@ export default function GameWrapper({ onClose }) {
       }
       onZoneChange = (e) => setCurrentZone(e.detail.zone)
       onPauseToggle = (e) => setIsPaused(Boolean(e.detail?.paused))
+      onPauseAction = (e) => {
+        const action = e.detail?.action
+        if (action === 'tutorial') {
+          window.location.href = '/tutorial?from=game'
+          return
+        }
+        if (action === 'selectClass') {
+          window.location.href = '/select-region'
+        }
+      }
 
       window.addEventListener('academia:expUpdate', onExpUpdate)
       window.addEventListener('academia:hpUpdate', onHpUpdate)
       window.addEventListener('academia:syncPosition', onSyncPos)
       window.addEventListener('academia:zoneChange', onZoneChange)
       window.addEventListener('academia:pauseToggle', onPauseToggle)
+      window.addEventListener('academia:pauseAction', onPauseAction)
     })()
 
     return () => {
@@ -78,6 +90,7 @@ export default function GameWrapper({ onClose }) {
       if (onSyncPos) window.removeEventListener('academia:syncPosition', onSyncPos)
       if (onZoneChange) window.removeEventListener('academia:zoneChange', onZoneChange)
       if (onPauseToggle) window.removeEventListener('academia:pauseToggle', onPauseToggle)
+      if (onPauseAction) window.removeEventListener('academia:pauseAction', onPauseAction)
       if (gameRef.current) {
         gameRef.current.destroy(true)
         gameRef.current = null
