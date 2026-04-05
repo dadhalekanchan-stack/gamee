@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Providers from '../providers'
 import BackButton from '../../components/BackButton'
 import { markOnboardingDone } from '../../lib/onboarding'
@@ -27,10 +27,12 @@ const STEPS = [
 
 function TutorialBody() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
 
-  const from = searchParams.get('from')
+  const from = useMemo(() => {
+    if (typeof window === 'undefined') return null
+    return new URLSearchParams(window.location.search).get('from')
+  }, [])
   const returnTo = useMemo(() => {
     if (from === 'dashboard') return '/dashboard'
     const token = typeof window !== 'undefined' ? window.localStorage.getItem('academia_token') : null
