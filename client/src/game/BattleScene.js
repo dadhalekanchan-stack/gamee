@@ -241,28 +241,6 @@ export class BattleScene extends Phaser.Scene {
     buttonRef.setFillStyle(0x22bb55).setStrokeStyle(3, 0x55ff88)
     this.cameras.main.flash(180, 130, 255, 130)
     this.add.circle(buttonRef.x, buttonRef.y, 26, 0x79f2a1, 0.45).setDepth(6)
-    this.add
-      .text(this.scale.width / 2, 270, `✓ CORRECT! +${result.exp_gained} EXP`, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '34px',
-        color: '#55ff88',
-        stroke: '#000000',
-        strokeThickness: 6,
-      })
-      .setOrigin(0.5)
-    if (result.explanation) {
-      this.add
-        .text(this.scale.width / 2, 300, result.explanation, {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '20px',
-          color: '#aaaaaa',
-          wordWrap: { width: 640 },
-          align: 'center',
-          stroke: '#000000',
-          strokeThickness: 4,
-        })
-        .setOrigin(0.5)
-    }
     const gameData = (this.game.config.gameData = this.game.config.gameData || {})
     const prevLevel = gameData.level || 1
     if (result.new_level > prevLevel) this.showLevelUpEffect(result.new_level)
@@ -272,7 +250,13 @@ export class BattleScene extends Phaser.Scene {
     window.dispatchEvent(
       new CustomEvent('academia:expUpdate', { detail: { exp: result.new_exp, level: result.new_level } }),
     )
-    this.showContinueButton(() => this.returnToWorld(true))
+    this.showFeedbackPopup({
+      title: 'Your answer was CORRECT!',
+      detail: `+${result.exp_gained} EXP gained`,
+      explanation: result.explanation,
+      tone: 'success',
+      onContinue: () => this.returnToWorld(true),
+    })
   }
 
   onWrongAnswer(result, selectedIdx, buttonRef) {
@@ -284,82 +268,123 @@ export class BattleScene extends Phaser.Scene {
       if (correctIdx !== selectedIdx) {
         correctBtn.setFillStyle(0x22bb55).setStrokeStyle(3, 0x55ff88)
       }
-      this.add
-        .text(this.scale.width / 2, 300, `Correct answer: ${['A', 'B', 'C', 'D'][correctIdx]}`, {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '22px',
-          color: '#9be7a3',
-          stroke: '#000000',
-          strokeThickness: 5,
-        })
-        .setOrigin(0.5)
-    }
-
-    if (result?.explanation) {
-      this.add
-        .text(this.scale.width / 2, 328, result.explanation, {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '18px',
-          color: '#d6d6d6',
-          wordWrap: { width: 640 },
-          align: 'center',
-          stroke: '#000000',
-          strokeThickness: 4,
-        })
-        .setOrigin(0.5)
     }
 
     this.cameras.main.shake(280, 0.02)
     this.cameras.main.flash(120, 255, 120, 120)
     this.add.circle(buttonRef.x, buttonRef.y, 24, 0xff6b6b, 0.38).setDepth(6)
-    this.add
-      .text(this.scale.width / 2, 270, `✗ WRONG! -${HP_DAMAGE} HP`, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '34px',
-        color: '#ff5555',
-        stroke: '#000000',
-        strokeThickness: 6,
-      })
-      .setOrigin(0.5)
     const gameData = (this.game.config.gameData = this.game.config.gameData || {})
     const currentHp = gameData.hp ?? 100
     const newHp = Math.max(0, currentHp - HP_DAMAGE)
     gameData.hp = newHp
     window.dispatchEvent(new CustomEvent('academia:hpUpdate', { detail: { hp: newHp } }))
+
+    const correctAnswerText =
+      Number.isInteger(correctIdx) && correctIdx >= 0 && correctIdx <= 3
+        ? `Correct answer: ${['A', 'B', 'C', 'D'][correctIdx]}`
+        : ''
+
     if (newHp <= 0) {
-      this.time.delayedCall(1200, () => this.showGameOver())
+      this.showFeedbackPopup({
+        title: 'Your answer was WRONG!',
+        detail: `-${HP_DAMAGE} HP. ${correctAnswerText}`.trim(),
+        explanation: result?.explanation,
+        tone: 'danger',
+        onContinue: () => this.showGameOver(),
+      })
       return
     }
-    this.showContinueButton(() => this.returnToWorld(true))
+    this.showFeedbackPopup({
+      title: 'Your answer was WRONG!',
+      detail: `-${HP_DAMAGE} HP. ${correctAnswerText}`.trim(),
+      explanation: result?.explanation,
+      tone: 'danger',
+      onContinue: () => this.returnToWorld(true),
+    })
   }
 
-  showContinueButton(onContinue) {
-    const { width } = this.scale
-    const box = this.add
-      .rectangle(width / 2, 520, 220, 46, 0x1f4ea6)
-      .setStrokeStyle(2, 0x8bc2ff)
-      .setInteractive({ cursor: 'pointer' })
-      .setDepth(20)
-    this.add
-      .text(width / 2, 520, 'Continue', {
+  showFeedbackPopup({ title, detail, explanation, tone = 'success', onContinue }) {
+    const { width, height } = this.scale
+    const toneMap = {
+      success: { panel: 0x0c2a1e, border: 0x55ff88, title: '#86ffad' },
+      danger: { panel: 0x2a1313, border: 0xff7777, title: '#ff9f9f' },
+      neutral: { panel: 0x17213a, border: 0x8bc2ff, title: '#d8ebff' },
+    }
+    const colors = toneMap[tone] || toneMap.neutral
+
+    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setDepth(40)
+    const panel = this.add
+      .rectangle(width / 2, height / 2, 660, 300, colors.panel, 0.96)
+      .setStrokeStyle(3, colors.border)
+      .setDepth(41)
+    const titleText = this.add
+      .text(width / 2, height / 2 - 95, title, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '38px',
+        color: colors.title,
+        stroke: '#000000',
+        strokeThickness: 6,
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setDepth(42)
+
+    const detailText = this.add
+      .text(width / 2, height / 2 - 35, detail, {
         fontFamily: 'Arial, sans-serif',
         fontSize: '24px',
         color: '#ffffff',
         stroke: '#000000',
         strokeThickness: 4,
+        align: 'center',
+        wordWrap: { width: 580, useAdvancedWrap: true },
       })
       .setOrigin(0.5)
-      .setDepth(21)
+      .setDepth(42)
 
+    const explanationText = this.add
+      .text(width / 2, height / 2 + 20, explanation || '', {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '19px',
+        color: '#d6d6d6',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'center',
+        wordWrap: { width: 580, useAdvancedWrap: true },
+      })
+      .setOrigin(0.5)
+      .setDepth(42)
+
+    const button = this.add
+      .rectangle(width / 2, height / 2 + 102, 250, 48, 0x4a5568)
+      .setStrokeStyle(2, 0xa7b4cb)
+      .setDepth(42)
+    const buttonText = this.add
+      .text(width / 2, height / 2 + 102, 'Please wait...', {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '24px',
+        color: '#d8e2f0',
+        stroke: '#000000',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(43)
+
+    const popupItems = [overlay, panel, titleText, detailText, explanationText, button, buttonText]
+    let canProceed = false
     const proceed = () => {
-      if (!this.scene.isActive()) return
-      box.disableInteractive()
+      if (!canProceed || !this.scene.isActive()) return
+      canProceed = false
+      popupItems.forEach((item) => item.destroy())
       onContinue()
     }
 
-    box.on('pointerdown', proceed)
-    this.input.keyboard.once('keydown-ENTER', () => {
-      if (this.feedbackLocked) proceed()
+    this.time.delayedCall(1400, () => {
+      canProceed = true
+      button.setFillStyle(0x1f4ea6).setStrokeStyle(2, 0x8bc2ff).setInteractive({ cursor: 'pointer' })
+      buttonText.setText('Continue')
+      button.once('pointerdown', proceed)
+      this.input.keyboard.once('keydown-ENTER', proceed)
     })
   }
 
