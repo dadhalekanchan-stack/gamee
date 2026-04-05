@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Providers from '../providers'
 import Dashboard from '../../components/Dashboard'
 import { usePlayer } from '../../hooks/usePlayer'
+import { isOnboardingDone } from '../../lib/onboarding'
 
 function DashboardBody() {
   const router = useRouter()
@@ -12,6 +13,10 @@ function DashboardBody() {
 
   useEffect(() => {
     if (!isLoaded) return
+    if (!isOnboardingDone()) {
+      router.replace('/tutorial?from=dashboard')
+      return
+    }
     if (!token) router.replace('/login')
     else if (!selectedStandard) router.replace('/select-region')
   }, [token, isLoaded, selectedStandard, router])

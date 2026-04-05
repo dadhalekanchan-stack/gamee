@@ -13,6 +13,7 @@ export class BattleScene extends Phaser.Scene {
     this.answered = false
     this.selectedBtnIdx = 0
     this.buttons = []
+    this.feedbackLocked = false
   }
 
   create() {
@@ -145,7 +146,7 @@ export class BattleScene extends Phaser.Scene {
         if (!this.answered) bg.setFillStyle(idx === this.selectedBtnIdx ? 0x17406d : 0x102846)
       })
       bg.on('pointerdown', () => {
-        if (!this.answered) {
+        if (!this.answered && !this.feedbackLocked) {
           this.answered = true
           this.submitAnswer(idx, bg)
         }
@@ -159,7 +160,7 @@ export class BattleScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-UP', () => this.navigateButtons(-2))
     this.input.keyboard.on('keydown-DOWN', () => this.navigateButtons(2))
     this.input.keyboard.on('keydown-ENTER', () => {
-      if (!this.answered) {
+      if (!this.answered && !this.feedbackLocked) {
         this.answered = true
         this.submitAnswer(this.selectedBtnIdx, this.buttons[this.selectedBtnIdx].bg)
       }
@@ -226,7 +227,7 @@ export class BattleScene extends Phaser.Scene {
           return
         }
         if (result.body.correct) this.onCorrectAnswer(result.body, buttonRef)
-        else this.onWrongAnswer(buttonRef)
+        else this.onWrongAnswer(result.body, selectedIdx, buttonRef)
       })
       .catch(() => {
         if (!this.scene.isActive()) return
@@ -236,6 +237,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   onCorrectAnswer(result, buttonRef) {
+    this.feedbackLocked = true
     buttonRef.setFillStyle(0x22bb55).setStrokeStyle(3, 0x55ff88)
     this.cameras.main.flash(180, 130, 255, 130)
     this.add.circle(buttonRef.x, buttonRef.y, 26, 0x79f2a1, 0.45).setDepth(6)
@@ -270,11 +272,43 @@ export class BattleScene extends Phaser.Scene {
     window.dispatchEvent(
       new CustomEvent('academia:expUpdate', { detail: { exp: result.new_exp, level: result.new_level } }),
     )
-    this.time.delayedCall(2500, () => this.returnToWorld(true))
+    this.showContinueButton(() => this.returnToWorld(true))
   }
 
-  onWrongAnswer(buttonRef) {
+  onWrongAnswer(result, selectedIdx, buttonRef) {
+    this.feedbackLocked = true
     buttonRef.setFillStyle(0xbb2222).setStrokeStyle(3, 0xff5555)
+    const correctIdx = Number(result?.correct_idx)
+    if (Number.isInteger(correctIdx) && this.buttons[correctIdx]) {
+      const correctBtn = this.buttons[correctIdx].bg
+      if (correctIdx !== selectedIdx) {
+        correctBtn.setFillStyle(0x22bb55).setStrokeStyle(3, 0x55ff88)
+      }
+      this.add
+        .text(this.scale.width / 2, 300, `Correct answer: ${['A', 'B', 'C', 'D'][correctIdx]}`, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '22px',
+          color: '#9be7a3',
+          stroke: '#000000',
+          strokeThickness: 5,
+        })
+        .setOrigin(0.5)
+    }
+
+    if (result?.explanation) {
+      this.add
+        .text(this.scale.width / 2, 328, result.explanation, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '18px',
+          color: '#d6d6d6',
+          wordWrap: { width: 640 },
+          align: 'center',
+          stroke: '#000000',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5)
+    }
+
     this.cameras.main.shake(280, 0.02)
     this.cameras.main.flash(120, 255, 120, 120)
     this.add.circle(buttonRef.x, buttonRef.y, 24, 0xff6b6b, 0.38).setDepth(6)
@@ -292,9 +326,40 @@ export class BattleScene extends Phaser.Scene {
     const newHp = Math.max(0, currentHp - HP_DAMAGE)
     gameData.hp = newHp
     window.dispatchEvent(new CustomEvent('academia:hpUpdate', { detail: { hp: newHp } }))
-    this.time.delayedCall(2500, () => {
-      if (newHp <= 0) this.showGameOver()
-      else this.returnToWorld(true)
+    if (newHp <= 0) {
+      this.time.delayedCall(1200, () => this.showGameOver())
+      return
+    }
+    this.showContinueButton(() => this.returnToWorld(true))
+  }
+
+  showContinueButton(onContinue) {
+    const { width } = this.scale
+    const box = this.add
+      .rectangle(width / 2, 520, 220, 46, 0x1f4ea6)
+      .setStrokeStyle(2, 0x8bc2ff)
+      .setInteractive({ cursor: 'pointer' })
+      .setDepth(20)
+    this.add
+      .text(width / 2, 520, 'Continue', {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '24px',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(21)
+
+    const proceed = () => {
+      if (!this.scene.isActive()) return
+      box.disableInteractive()
+      onContinue()
+    }
+
+    box.on('pointerdown', proceed)
+    this.input.keyboard.once('keydown-ENTER', () => {
+      if (this.feedbackLocked) proceed()
     })
   }
 
