@@ -1,4 +1,4 @@
-import { HP_DAMAGE } from './constants'
+import { HP_DAMAGE, ALL_ZONE_KEYS, ZONE_LABELS } from './constants'
 
 export class BattleScene extends Phaser.Scene {
   constructor() {
@@ -250,12 +250,32 @@ export class BattleScene extends Phaser.Scene {
     window.dispatchEvent(
       new CustomEvent('academia:expUpdate', { detail: { exp: result.new_exp, level: result.new_level } }),
     )
+
+    // Track earned badges in gameData
+    if (result.badge_earned && this.isGymBattle) {
+      gameData.earnedBadgeZones = gameData.earnedBadgeZones || []
+      if (!gameData.earnedBadgeZones.includes(this.zone)) {
+        gameData.earnedBadgeZones.push(this.zone)
+      }
+    }
+
+    // Check if all 3 gym badges are earned → victory!
+    const allBadgesEarned =
+      gameData.earnedBadgeZones &&
+      ALL_ZONE_KEYS.every((z) => gameData.earnedBadgeZones.includes(z))
+
     this.showFeedbackPopup({
       title: 'Your answer was CORRECT!',
       detail: `+${result.exp_gained} EXP gained`,
       explanation: result.explanation,
       tone: 'success',
-      onContinue: () => this.returnToWorld(true),
+      onContinue: () => {
+        if (allBadgesEarned) {
+          this.showVictoryScreen()
+        } else {
+          this.returnToWorld(true)
+        }
+      },
     })
   }
 
@@ -443,6 +463,138 @@ export class BattleScene extends Phaser.Scene {
       gameData.hp = 100
       window.dispatchEvent(new CustomEvent('academia:hpUpdate', { detail: { hp: 100 } }))
       this.time.delayedCall(3000, () => this.returnToWorld(true))
+    })
+  }
+
+  showVictoryScreen() {
+    const { width, height } = this.scale
+    this.cameras.main.fade(500, 0, 0, 0)
+    this.time.delayedCall(500, () => {
+      this.cameras.main.resetFX()
+
+      // Dark background
+      this.add.rectangle(width / 2, height / 2, width, height, 0x030712)
+
+      // Starfield particles
+      for (let i = 0; i < 60; i++) {
+        const star = this.add
+          .circle(
+            Phaser.Math.Between(20, width - 20),
+            Phaser.Math.Between(20, height - 20),
+            Phaser.Math.Between(1, 3),
+            0xffffff,
+            Phaser.Math.FloatBetween(0.3, 1),
+          )
+          .setDepth(1)
+        this.tweens.add({
+          targets: star,
+          alpha: 0.1,
+          duration: Phaser.Math.Between(600, 1500),
+          yoyo: true,
+          repeat: -1,
+        })
+      }
+
+      // Golden glow
+      const glow = this.add.circle(width / 2, height / 2 - 40, 120, 0xffd700, 0.15).setDepth(2)
+      this.tweens.add({
+        targets: glow,
+        scaleX: 1.3,
+        scaleY: 1.3,
+        alpha: 0.05,
+        duration: 1200,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      })
+
+      // Trophy icon
+      this.add
+        .text(width / 2, height / 2 - 100, '🏆', {
+          fontSize: '72px',
+        })
+        .setOrigin(0.5)
+        .setDepth(10)
+
+      // CHAMPION title
+      const titleText = this.add
+        .text(width / 2, height / 2 - 20, 'ACADEMIA CHAMPION!', {
+          fontFamily: '"Press Start 2P"',
+          fontSize: '22px',
+          color: '#ffd700',
+          stroke: '#000000',
+          strokeThickness: 6,
+          align: 'center',
+        })
+        .setOrigin(0.5)
+        .setDepth(10)
+        .setAlpha(0)
+      this.tweens.add({
+        targets: titleText,
+        alpha: 1,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 800,
+        ease: 'Back.easeOut',
+      })
+
+      // Subtitle
+      this.time.delayedCall(600, () => {
+        this.add
+          .text(width / 2, height / 2 + 30, 'You have conquered all three Gyms!', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '22px',
+            color: '#d9ebff',
+            stroke: '#000000',
+            strokeThickness: 4,
+            align: 'center',
+          })
+          .setOrigin(0.5)
+          .setDepth(10)
+      })
+
+      // Badge list
+      this.time.delayedCall(1000, () => {
+        const badgeLines = ALL_ZONE_KEYS.map(
+          (z) => `🏅 ${ZONE_LABELS[z] || z} Badge`,
+        ).join('\n')
+        this.add
+          .text(width / 2, height / 2 + 85, badgeLines, {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '18px',
+            color: '#ffe58a',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center',
+            lineSpacing: 6,
+          })
+          .setOrigin(0.5)
+          .setDepth(10)
+      })
+
+      // Continue button after delay
+      this.time.delayedCall(2500, () => {
+        const btn = this.add
+          .rectangle(width / 2, height / 2 + 180, 300, 50, 0x1f4ea6)
+          .setStrokeStyle(2, 0x8bc2ff)
+          .setInteractive({ cursor: 'pointer' })
+          .setDepth(10)
+        const btnText = this.add
+          .text(width / 2, height / 2 + 180, 'Continue Playing', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '22px',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4,
+          })
+          .setOrigin(0.5)
+          .setDepth(11)
+
+        btn.on('pointerover', () => btn.setFillStyle(0x2a64c4))
+        btn.on('pointerout', () => btn.setFillStyle(0x1f4ea6))
+        btn.on('pointerdown', () => this.returnToWorld(true))
+        this.input.keyboard.once('keydown-ENTER', () => this.returnToWorld(true))
+      })
     })
   }
 

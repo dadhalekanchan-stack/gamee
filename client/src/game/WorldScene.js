@@ -193,12 +193,20 @@ export class WorldScene extends Phaser.Scene {
 
     // Show/hide "Press E" prompt when near a gym
     if (this.activeGymZone && !this.gymCooldown && !this.gymTransitioning) {
+      const playerLevel = this.game.config.gameData.level || 1
+      const required = GYM_LEVEL_REQUIREMENT[this.activeGymZone] || 1
+      const meetsReq = playerLevel >= required
+      const promptMsg = meetsReq
+        ? '⬇ Press [E] to enter Gym'
+        : `🔒 Locked! Need Level ${required}`
+      const promptColor = meetsReq ? '#ffd700' : '#ff6b6b'
+
       if (!this.gymPromptText) {
         this.gymPromptText = this.add
-          .text(this.player.x, this.player.y - 50, '⬇ Press [E] to enter Gym', {
+          .text(this.player.x, this.player.y - 50, promptMsg, {
             fontFamily: '"Press Start 2P"',
             fontSize: '10px',
-            color: '#ffd700',
+            color: promptColor,
             stroke: '#000000',
             strokeThickness: 4,
             align: 'center',
@@ -206,6 +214,8 @@ export class WorldScene extends Phaser.Scene {
           .setOrigin(0.5)
           .setDepth(20)
       }
+      this.gymPromptText.setText(promptMsg)
+      this.gymPromptText.setColor(promptColor)
       this.gymPromptText.setPosition(this.player.x, this.player.y - 50)
     } else if (this.gymPromptText) {
       this.gymPromptText.destroy()

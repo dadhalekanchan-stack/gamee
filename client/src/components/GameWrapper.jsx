@@ -50,6 +50,18 @@ export default function GameWrapper({ onClose }) {
         map_x: mapX ?? 400,
         map_y: mapY ?? 300,
         zone: 'physics_town',
+        earnedBadgeZones: [],
+      }
+
+      // Pre-load existing badges so victory check works for returning players
+      try {
+        const { getBadges: fetchBadges } = await import('../lib/api')
+        const badgeData = await fetchBadges(playerId)
+        if (badgeData?.badges) {
+          config.gameData.earnedBadgeZones = badgeData.badges.map((b) => b.zone)
+        }
+      } catch {
+        // Non-critical — badges will be tracked as earned during this session
       }
 
       gameRef.current = new Phaser.Game(config)

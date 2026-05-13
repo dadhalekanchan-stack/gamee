@@ -12,9 +12,11 @@ export const ZONE_LABELS = {
 
 export const GYM_LEVEL_REQUIREMENT = {
   physics_town: 1,
-  math_town: 1,
-  chem_town: 1,
+  math_town: 3,
+  chem_town: 5,
 }
+
+export const ALL_ZONE_KEYS = ['physics_town', 'math_town', 'chem_town']
 
 export const LEVEL_THRESHOLDS = {
   1: 100,

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBadges } from '../lib/api'
 import { usePlayer } from '../hooks/usePlayer'
-import { LEVEL_THRESHOLDS } from '../game/constants'
+import { LEVEL_THRESHOLDS, GYM_LEVEL_REQUIREMENT, ZONE_LABELS, ALL_ZONE_KEYS } from '../game/constants'
 import GameWrapper from './GameWrapper'
 import BackButton from './BackButton'
 
@@ -64,18 +64,40 @@ export default function Dashboard() {
             </section>
 
             <section className="rounded-lg border border-amber-500/50 bg-slate-900/70 p-5">
-              <h2 className="mb-3 text-2xl text-amber-100" style={{ fontFamily: 'Arial, sans-serif' }}>Badges</h2>
+              <h2 className="mb-3 text-2xl text-amber-100" style={{ fontFamily: 'Arial, sans-serif' }}>Badges ({badges.length}/3)</h2>
+              {badges.length >= 3 ? (
+                <div className="mb-4 p-3 rounded-lg border border-yellow-400/60 bg-yellow-900/30 text-center">
+                  <p className="text-2xl mb-1">🏆</p>
+                  <p className="text-lg text-yellow-200 font-bold" style={{ fontFamily: 'Arial, sans-serif' }}>ACADEMIA CHAMPION!</p>
+                  <p className="text-sm text-yellow-100/80" style={{ fontFamily: 'Arial, sans-serif' }}>You have conquered all three Gyms!</p>
+                </div>
+              ) : null}
               {badges.length === 0 ? (
-                <p className="text-base text-slate-100" style={{ fontFamily: 'Arial, sans-serif' }}>No badges yet — challenge a Gym!</p>
+                <p className="text-base text-slate-100 mb-3" style={{ fontFamily: 'Arial, sans-serif' }}>No badges yet — challenge a Gym!</p>
               ) : (
-                <ul className="text-base space-y-2 text-slate-100" style={{ fontFamily: 'Arial, sans-serif' }}>
+                <ul className="text-base space-y-2 text-slate-100 mb-3" style={{ fontFamily: 'Arial, sans-serif' }}>
                   {badges.map((badge) => (
                     <li key={`${badge.badge_name}-${badge.earned_at}`}>
-                      {badge.zone} — {new Date(badge.earned_at).toLocaleString()}
+                      🏅 {ZONE_LABELS[badge.zone] || badge.zone} Badge — {new Date(badge.earned_at).toLocaleString()}
                     </li>
                   ))}
                 </ul>
               )}
+              <h3 className="text-lg text-sky-200 mb-2 mt-4" style={{ fontFamily: 'Arial, sans-serif' }}>Gym Requirements</h3>
+              <ul className="text-sm space-y-1 text-slate-300" style={{ fontFamily: 'Arial, sans-serif' }}>
+                {ALL_ZONE_KEYS.map((zone) => {
+                  const req = GYM_LEVEL_REQUIREMENT[zone] || 1
+                  const hasBadge = badges.some((b) => b.zone === zone)
+                  const canAccess = level >= req
+                  return (
+                    <li key={zone} className="flex items-center gap-2">
+                      <span>{hasBadge ? '✅' : canAccess ? '🔓' : '🔒'}</span>
+                      <span>{ZONE_LABELS[zone]} Gym — Level {req} required</span>
+                      {hasBadge ? <span className="text-green-400 ml-auto">Completed</span> : null}
+                    </li>
+                  )
+                })}
+              </ul>
             </section>
           </div>
 
