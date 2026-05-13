@@ -38,7 +38,10 @@ export default function Dashboard() {
         <div className="mb-4">
           <button
             type="button"
-            onClick={() => router.push('/select-region')}
+            onClick={() => {
+              localStorage.removeItem('academia_region')
+              router.push('/select-region')
+            }}
             className="academy-btn-secondary px-3 py-2 text-xs"
             style={{ fontFamily: 'Arial, sans-serif' }}
           >
