@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBadges } from '../lib/api'
 import { usePlayer } from '../hooks/usePlayer'
@@ -36,7 +36,7 @@ export default function Dashboard() {
     <div className="min-h-screen text-slate-100 bg-[radial-gradient(circle_at_20%_20%,#26438e_0%,#132c6b_35%,#081433_70%,#050b1c_100%)]">
       <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
         <div className="mb-4">
-          <BackButton fallback="/" label="Home" />
+          <BackButton fallback="/select-region" label="Change Standard" />
         </div>
         <div className="rounded-xl border border-sky-500/60 bg-slate-950/45 backdrop-blur-sm p-6 md:p-8 shadow-[0_0_0_2px_rgba(125,211,252,0.15)_inset]">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">

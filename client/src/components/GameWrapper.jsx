@@ -15,6 +15,21 @@ export default function GameWrapper({ onClose }) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showHud, setShowHud] = useState(false)
 
+  // Use refs for callbacks that change on every render so the game isn't destroyed
+  const updateExpRef = useRef(updateExpAndLevel)
+  const updateHpRef = useRef(updateHp)
+  const playerInitRef = useRef({ level, exp, hp, mapX, mapY })
+
+  useEffect(() => {
+    updateExpRef.current = updateExpAndLevel
+    updateHpRef.current = updateHp
+  }, [updateExpAndLevel, updateHp])
+
+  // Store initial values on first render only
+  useEffect(() => {
+    playerInitRef.current = { level, exp, hp, mapX, mapY }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (gameRef.current) return
     if (!playerId) return
@@ -35,6 +50,7 @@ export default function GameWrapper({ onClose }) {
       const { BattleScene } = await import('../game/BattleScene')
       if (!mounted) return
 
+      const init = playerInitRef.current
       config.scene = [BootScene, WorldScene, BattleScene]
       config.scale = {
         mode: Phaser.Scale.FIT,
@@ -44,11 +60,11 @@ export default function GameWrapper({ onClose }) {
       }
       config.gameData = {
         playerId,
-        level,
-        exp,
-        hp,
-        map_x: mapX ?? 400,
-        map_y: mapY ?? 300,
+        level: init.level,
+        exp: init.exp,
+        hp: init.hp,
+        map_x: init.mapX ?? 400,
+        map_y: init.mapY ?? 300,
         zone: 'physics_town',
         earnedBadgeZones: [],
       }
@@ -66,8 +82,8 @@ export default function GameWrapper({ onClose }) {
 
       gameRef.current = new Phaser.Game(config)
 
-      onExpUpdate = (e) => updateExpAndLevel(e.detail.exp, e.detail.level)
-      onHpUpdate = (e) => updateHp(e.detail.hp)
+      onExpUpdate = (e) => updateExpRef.current(e.detail.exp, e.detail.level)
+      onHpUpdate = (e) => updateHpRef.current(e.detail.hp)
       onSyncPos = (e) => {
         lastPosRef.current = { map_x: e.detail.map_x, map_y: e.detail.map_y }
         if (playerId) {
@@ -111,7 +127,7 @@ export default function GameWrapper({ onClose }) {
         syncPosition(playerId, lastPosRef.current.map_x, lastPosRef.current.map_y).catch(() => {})
       }
     }
-  }, [playerId, level, exp, hp, mapX, mapY, updateExpAndLevel, updateHp])
+  }, [playerId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
