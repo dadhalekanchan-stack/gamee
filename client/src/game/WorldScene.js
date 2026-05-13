@@ -79,9 +79,18 @@ export class WorldScene extends Phaser.Scene {
     this.interactKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E)
     this.pauseKey.on('down', () => this.togglePauseMenu())
 
-    const gymTriggerY = Math.min(map.heightInPixels - 110, 320)
+    const gymLandmarkPositions = {
+      physics_town: { x: 140, y: 140 },
+      math_town: { x: 390, y: 130 },
+      chem_town: { x: 640, y: 140 },
+    }
+    this.gymPromptText = null
     this.gymZones = this.zoneBands.map((band) => {
-      const gym = this.add.zone(Math.round((band.minX + band.maxX) / 2), gymTriggerY, 120, 120)
+      const pos = gymLandmarkPositions[band.zone] || {
+        x: Math.round((band.minX + band.maxX) / 2),
+        y: 320,
+      }
+      const gym = this.add.zone(pos.x, pos.y, 140, 140)
       this.physics.world.enable(gym, Phaser.Physics.Arcade.STATIC_BODY)
       this.physics.add.overlap(
         this.player,
@@ -180,6 +189,27 @@ export class WorldScene extends Phaser.Scene {
 
     if (this.activeGymZone && Phaser.Input.Keyboard.JustDown(this.interactKey)) {
       this._onGymOverlap(this.activeGymZone)
+    }
+
+    // Show/hide "Press E" prompt when near a gym
+    if (this.activeGymZone && !this.gymCooldown && !this.gymTransitioning) {
+      if (!this.gymPromptText) {
+        this.gymPromptText = this.add
+          .text(this.player.x, this.player.y - 50, '⬇ Press [E] to enter Gym', {
+            fontFamily: '"Press Start 2P"',
+            fontSize: '10px',
+            color: '#ffd700',
+            stroke: '#000000',
+            strokeThickness: 4,
+            align: 'center',
+          })
+          .setOrigin(0.5)
+          .setDepth(20)
+      }
+      this.gymPromptText.setPosition(this.player.x, this.player.y - 50)
+    } else if (this.gymPromptText) {
+      this.gymPromptText.destroy()
+      this.gymPromptText = null
     }
 
     this.syncZoneByPosition()
